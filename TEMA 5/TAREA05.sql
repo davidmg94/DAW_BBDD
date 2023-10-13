@@ -1,0 +1,76 @@
+--ENUNCIADO 1
+UPDATE M_VENTAS_RECETAS SET DNIM = '22222222B',DNIP ='10000000A' WHERE ID_VENTA = 25;
+UPDATE M_VENTAS_RECETAS SET DNIM = '11111111A',DNIP ='20000000B' WHERE ID_VENTA = 28;
+COMMIT;
+
+--ENUNCIADO 2
+INSERT INTO M_MEDICOS (DNIM, APELLIDOS, NOMBRE, CENTRO_SALUD, POBLACION, PROVINCIA, TELEFONO) 
+VALUES ('11111112B', 'Sanz Hervás', 'María', 'Centro Salud 1', 'Ciudad Real', 'Ciudad Real', '926212121');
+
+INSERT INTO M_MEDICOS (DNIM, APELLIDOS, NOMBRE, CENTRO_SALUD, POBLACION, PROVINCIA) 
+VALUES ('11111113b', 'RAMOS CRUZ', 'JUAN', 'Centro Salud 3', 'DAIMIEL', 'CIUDAD REAL');
+
+INSERT INTO M_MEDICOS (DNIM, APELLIDOS, NOMBRE, POBLACION, EMAIL) 
+VALUES ('11111114B', 'LAOS MIS', 'PEDRO', 'PUERTOLLANO', 'PLM@gmail.com');
+
+INSERT INTO M_MEDICOS (DNIM, APELLIDOS, NOMBRE, PROVINCIA, MOVIL) 
+VALUES ('11111115B', 'Lagos Cortés', 'Marina', 'TOLEDO', '622622622');
+
+COMMIT;
+
+--ENUNCIADO 3
+INSERT INTO M_LABORATORIOS (id_lab, nombre_lab, direccion, poblacion, provincia, telefono, fax, email) 
+SELECT 5, 'FARMAREAL', 'AVENIDA UNIVERSIDAD', poblacion, provincia, '926212121', '926222222', 'info@farmareal.com' 
+FROM M_LABORATORIOS 
+WHERE id_lab = 3;
+COMMIT;
+
+--ENUNCIADO 4
+DELETE M_FAMILIAS WHERE id_fam = 2; (No deja borrarlo porque id_fam es clave ajena de la tabla medicamentos. Habría que borrar primero la clave ajena para poder borrar el registro.) 
+
+DELETE FROM M_PRESENTACIONES
+WHERE id_pres NOT IN (SELECT id_pres FROM M_MEDICAMENTOS);
+COMMIT;
+
+DELETE FROM M_FAMILIAS
+WHERE id_fam NOT IN (SELECT id_fam FROM M_MEDICAMENTOS);
+COMMIT;
+
+--ENUNCIADO 5
+UPDATE m_medicamentos SET stock = stock +10 WHERE UPPER (nombre_med) LIKE '%ANTINFLAMATORIO%' OR UPPER (nombre_med) LIKE '%VACUNA%';
+COMMIT;
+
+--ENUNCIADO 6
+UPDATE m_medicamentos SET precio_unit = precio_unit * 1.1
+WHERE id_med IN (
+	SELECT id_med 
+	FROM M_VENTAS_MED 
+	WHERE fecha_venta BETWEEN TO_DATE ('01/01/2020', 'DD/MM/YYYY')  AND TO_DATE ('31/12/2020', 'DD/MM/YYYY')
+	GROUP BY id_med
+	HAVING SUM (unidades) > 10);
+COMMIT;
+
+--ENUNCIADO 7
+CREATE TABLE M_TOTAL_VENTAS (
+	ID_MED NUMBER (4),
+	UNIDADES_VENDIDAS NUMBER (6),
+	TOTAL_VENTAS NUMBER (9,2),
+ 	CONSTRAINT PK_IDMED_TOTAL PRIMARY KEY (ID_MED),
+	CONSTRAINT FK_IDMED_TOTAL FOREIGN KEY (ID_MED) REFERENCES 	M_MEDICAMENTOS    (ID_MED)
+);
+
+
+INSERT INTO M_TOTAL_VENTAS (id_med, unidades_vendidas, total_ventas)
+SELECT m.id_med, SUM (vm.unidades), 
+SUM (vm.unidades * m.precio_unit) 
+FROM m_medicamentos m JOIN m_ventas_med vm
+ON m.id_med = vm.id_med
+GROUP BY m.id_med;
+COMMIT;
+--ENUNCIADO 8
+UPDATE M_MEDICAMENTOS m SET stock = stock - ( NVL( SUM(unidades) ,0)
+							FROM m_ventas_med vm
+							WHERE vm.id_med = m.id_med);
+  
+COMMIT;
+
